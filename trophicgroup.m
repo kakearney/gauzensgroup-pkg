@@ -3,6 +3,7 @@ function [tgpart, Out, G] = trophicgroup(G, varargin)
 %
 % tgpart = trophicgroup(G)
 % tgpart = trophicgroup(EM)
+% tgpart = trophicgroup(adj)
 % [tgpart, Out, G] = trophicgroup(..., p1, v1, ...)
 %
 % Based on Gauzens et al. 2014, this function attempts to partition a food
@@ -16,6 +17,11 @@ function [tgpart, Out, G] = trophicgroup(G, varargin)
 %   EM:         an ecopathmodel object.  Nodes in the graph will consist of
 %               all groups and fleets in the model, and edges will be all
 %               predator-prey and fisheries catch links.
+%
+%   adj:        adjacency matrix representing predator-prey links;
+%               adj(i,j) is non-zero if group j eats group i and 0
+%               otherwise. (All non-zero values are treated as 1 for
+%               trophic grouping purposes).
 %
 % Optional input variables (passed as parameter/value pairs):
 %
@@ -43,7 +49,7 @@ function [tgpart, Out, G] = trophicgroup(G, varargin)
 %               to the producer/consumer/detrital/fleet designation).  Note
 %               that this splitting is done after the optimization is
 %               complete. [true for ecopathmodel input, false for digraph
-%               input]
+%               or adjacency matrix input]
 %
 %   sort:       logical scalar, true to sort resulting clusters from lowest
 %               to highest average trophic level.  The cluster indices
@@ -93,7 +99,7 @@ function [tgpart, Out, G] = trophicgroup(G, varargin)
 %   verbose:    Print progress to screen as simulation proceeds.  Includes
 %               the temperature (t, from 1 to 0), the change in energy
 %               metric over the last set of moves (dE), and the current
-%               energy value (E). [true]   
+%               energy value (E). [false]   
 %
 % Output variables:
 %
@@ -132,15 +138,27 @@ function [tgpart, Out, G] = trophicgroup(G, varargin)
 % Parse input
 %--------------------
 
-validateattributes(G, {'digraph', 'ecopathmodel'}, {});
+% validateattributes(G, {'digraph', 'ecopathmodel'}, {});
 if isa(G, 'ecopathmodel')
     G = G.graph('det', false, 'oos', false);
+    adj = adjacency(G);
+    
     splitdefault = true;
     sortdefault = true;
-else
+elseif isa(G, 'digraph')
+    adj = adjacency(G);
+    
     splitdefault = false;
     sortdefault = false;
-end 
+else
+    adj = G;
+    validateattributes(adj, {'numeric','logical'}, {'square'}, 'trophicgroup', 'adj');
+    G = digraph(adj);
+    
+    splitdefault = false;
+    sortdefault = false;
+end
+nnode = numnodes(G);
 
 % Overall parameters
 
@@ -190,9 +208,6 @@ SAopt = p2.Results;
 %--------------------
 
 % Basic graph properties
-
-nnode = numnodes(G);
-adj = adjacency(G);
 
 nedge = nnz(adj);                      % # links in the food web
 degree = full(sum(adj>0,1)' + sum(adj>0,2));  % degree of each node
