@@ -2,13 +2,14 @@ function [tsim, etsim] = trophicsimilarity(adj)
 %TROPHICSIMILARILTY Calculate trophic similarity
 %
 % tsim = trophicsimilarity(adj)
+% [tsim, etsim] = trophicsimilarity(adj)
 %
 % Calculates trophic similarity between groups in a food web, based on the
 % equation from Gauzens et al. 2014 (J. R. Soc. Interface, volume 12).
 % Trophic similarity is defined as the ratio between the number of predator
 % and prey species interacting with both of two node groups in the web
 % versus the number of predator and prey groups interacting with either of
-% those two groups (i.e intersection/union).
+% those two groups (i.e #intersection divided by #union).
 %
 % Input variables:
 %
